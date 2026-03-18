@@ -1,4 +1,4 @@
-Script started on 2026-03-18 08:54:14+00:00 [TERM="xterm" TTY="/dev/pts/13" COLUMNS="80" LINES="24"]
+Script started on 2026-03-18 09:43:38+00:00 [TERM="xterm" TTY="/dev/pts/6" COLUMNS="80" LINES="24"]
 python3 .//src/controller/controller.py --domain="AF_UNIX" --server-url="localhost"
 +=+ XLVIP-INFO: XlTlmMessageLayer::connectToServer():
 +=+    Connecting clientId=':remoteSession1' to 'server@localhost' ...
@@ -11,39 +11,39 @@ python3 .//src/controller/controller.py --domain="AF_UNIX" --server-url="localho
 +=+    Successfully connected this remote client conduit into the TLM fabric server:
 +=+        clientId=:remoteSession1
 +=+        conduitId=:timeServerConduit1
-           localClientConduitHandle=0x64e569e678c8
-           remoteServerProxyConduitHandle=0x77241b0
+           localClientConduitHandle=0x572000b7e8c8
+           remoteServerProxyConduitHandle=0x2e8531b0
 +=+ XLVIP-INFO: XlTlmMessageLayer::connect():
 +=+    Successfully connected this remote client conduit into the TLM fabric server:
 +=+        clientId=:remoteSession1
 +=+        conduitId=:resetServerConduit1
-           localClientConduitHandle=0x64e569d70968
-           remoteServerProxyConduitHandle=0x77203c0
+           localClientConduitHandle=0x572000a87968
+           remoteServerProxyConduitHandle=0x2e84f3c0
 +=+ XLVIP-INFO: XlTlmMessageLayer::connect():
 +=+    Successfully connected this remote client conduit into the TLM fabric server:
 +=+        clientId=:remoteSession1
 +=+        conduitId=:txConfigPort1
-           localClientConduitHandle=0x64e569e538a0
-           remoteServerProxyConduitHandle=0x7732b30
+           localClientConduitHandle=0x572000b6a8a0
+           remoteServerProxyConduitHandle=0x2e861b30
 +=+ XLVIP-INFO: XlTlmMessageLayer::connect():
 +=+    Successfully connected this remote client conduit into the TLM fabric server:
 +=+        clientId=:remoteSession1
 +=+        conduitId=:rxConfigPort1
-           localClientConduitHandle=0x64e569dc8550
-           remoteServerProxyConduitHandle=0x772ef30
+           localClientConduitHandle=0x572000adf550
+           remoteServerProxyConduitHandle=0x2e85df30
 +=+ INFO: ... successfully connected to TLM FabricServer !
 +=+ XLVIP-INFO: XlTlmMessageLayer::connect():
 +=+    Successfully connected this remote client conduit into the TLM fabric server:
 +=+        clientId=:remoteSession1
 +=+        conduitId=:txCanFrameConduit1
-           localClientConduitHandle=0x64e569e60ea0
-           remoteServerProxyConduitHandle=0x77289d0
+           localClientConduitHandle=0x572000b77ea0
+           remoteServerProxyConduitHandle=0x2e8579d0
 +=+ XLVIP-INFO: XlTlmMessageLayer::connect():
 +=+    Successfully connected this remote client conduit into the TLM fabric server:
 +=+        clientId=:remoteSession1
 +=+        conduitId=:rxCanFrameConduit1
-           localClientConduitHandle=0x64e569e6c9a0
-           remoteServerProxyConduitHandle=0x7727860
+           localClientConduitHandle=0x572000b839a0
+           remoteServerProxyConduitHandle=0x2e856860
 
 +=controller+=
   VSI time: 80100 ns
@@ -30048,4 +30048,4 @@ python3 .//src/controller/controller.py --domain="AF_UNIX" --server-url="localho
 +=+    Disconnecting this remote client from TLM fabric server:
 +=+        clientId=:remoteSession1
 
-Script done on 2026-03-18 08:55:25+00:00 [COMMAND_EXIT_CODE="0"]
+Script done on 2026-03-18 09:44:38+00:00 [COMMAND_EXIT_CODE="0"]
