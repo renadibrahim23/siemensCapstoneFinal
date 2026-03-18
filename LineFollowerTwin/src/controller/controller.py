@@ -59,6 +59,10 @@ class Controller:
 		self.integral_error=0.0
 		self.last_error=0.0
 		self.dt=0.01
+
+		# Rate Limiter variables
+		self.prev_w = 0.0
+		self.max_delta_w = 0.4
 		# End of user custom code region. Please don't edit beyond this point.
 
 
@@ -103,8 +107,19 @@ class Controller:
 				derivative=(current_error - self.last_error)/self.dt
 				self.last_error=current_error
 
+				# --- Rate Limiter Implementation ---
 				raw_w = (self.kp * current_error) + (self.ki * self.integral_error) + (self.kd * derivative)
-				self.mySignals.angular_w = max(min(raw_w, 3.0), -3.0)
+				target_w = max(min(raw_w, 3.0), -3.0)
+
+				delta_w = target_w - self.prev_w
+				if delta_w > self.max_delta_w:
+					delta_w = self.max_delta_w
+				elif delta_w < -self.max_delta_w:
+					delta_w = -self.max_delta_w
+
+				self.mySignals.angular_w = self.prev_w + delta_w
+				self.prev_w = self.mySignals.angular_w
+				# ------------------------------------
 
 		
 				self.mySignals.linear_v=0.5
@@ -289,7 +304,7 @@ def main():
 	# Start of user custom code region. Please apply edits only within these regions:  Main method
 	inputArgs.add_argument('--kp', type=float, default=1.5, help='Proportional Gain')
 	inputArgs.add_argument('--ki',type=float,default=0.0, help='Tntegral Gain')
-	inputArgs.add_argument('--kd',type=float,default=1.0,help='Derivative Gain')
+	inputArgs.add_argument('--kd',type=float,default=2.0,help='Derivative Gain')
 	inputArgs.add_argument('--path',type=str,default='straight',choices=['straight','sine'])
 	# End of user custom code region. Please don't edit beyond this point.
 
