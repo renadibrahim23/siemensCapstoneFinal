@@ -110,7 +110,7 @@ class Controller:
 					self.target_y = 0.0
 				
 				# Error Calculation
-				noise_amplitude = 0.0 
+				noise_amplitude = 0.01 
 				simulated_noise = random.uniform(-noise_amplitude, noise_amplitude)
 				noisy_y = self.mySignals.measured_y + simulated_noise
 				current_error = self.target_y - noisy_y

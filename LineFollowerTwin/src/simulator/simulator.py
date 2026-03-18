@@ -54,7 +54,7 @@ class Simulator:
 		
 		self.mySignals.theta=0.0
 		self.dt=0.01
-		random_spawn=True
+		random_spawn=False
 
 		if random_spawn:
 			self.mySignals.pos_y=random.uniform(-0.5, 0.5)
