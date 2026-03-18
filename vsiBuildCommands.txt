@@ -1,0 +1,53 @@
+#set serverIpAddress 10.11.8.12
+
+add component -type Python -name simulator
+add port -componentName simulator -name simulator -gateway python2DtCan
+add component -type Python -name controller
+add port -componentName controller -name controller -gateway python2DtCan
+add component -type Python -name logger
+add port -componentName logger -name logger -gateway python2DtCan
+
+
+define componentSignals -componentName simulator -signals "[pos_x:double:output,pos_y:double:output,measured_x:double:output,measured_y:double:output,theta:double:output,measured_theta:double:output,linear_v:double:input,angular_w:double:input]"
+define componentSignals -componentName controller -signals "[measured_x:double:input,measured_y:double:input,measured_theta:double:input,linear_v:double:output,angular_w:double:output,lateral_error:double:output,theta_error:double:output]"
+define componentSignals -componentName logger -signals "[pos_x:double:input,pos_y:double:input,theta:double:input,angular_w:double:input,lateral_error:double:input,theta_error:double:input]"
+
+define frame -componentName simulator -portName simulator -id 10 -signals [pos_x:0:64]
+define frame -componentName logger -portName logger -id 10 -signals [pos_x:0:64]
+
+define frame -componentName simulator -portName simulator -id 11 -signals [pos_y:0:64]
+define frame -componentName logger -portName logger -id 11 -signals [pos_y:0:64]
+
+define frame -componentName simulator -portName simulator -id 12 -signals [theta:0:64]
+define frame -componentName logger -portName logger -id 12 -signals [theta:0:64]
+
+define frame -componentName simulator -portName simulator -id 13 -signals [angular_w:0:64]
+define frame -componentName controller -portName controller -id 13 -signals [angular_w:0:64]
+define frame -componentName logger -portName logger -id 13 -signals [angular_w:0:64]
+
+define frame -componentName simulator -portName simulator -id 14 -signals [measured_x:0:64]
+define frame -componentName controller -portName controller -id 14 -signals [measured_x:0:64]
+
+define frame -componentName simulator -portName simulator -id 15 -signals [measured_y:0:64]
+define frame -componentName controller -portName controller -id 15 -signals [measured_y:0:64]
+
+define frame -componentName simulator -portName simulator -id 16 -signals [linear_v:0:64]
+define frame -componentName controller -portName controller -id 16 -signals [linear_v:0:64]
+
+
+define frame -componentName simulator -portName simulator -id 17 -signals [measured_theta:0:64]
+define frame -componentName controller -portName controller -id 17 -signals [measured_theta:0:64]
+
+define frame -componentName controller -portName controller -id 18 -signals [lateral_error:0:64]
+define frame -componentName logger -portName logger -id 18 -signals [lateral_error:0:64]
+
+define frame -componentName controller -portName controller -id 19 -signals [theta_error:0:64]
+define frame -componentName logger -portName logger -id 19 -signals [theta_error:0:64]
+
+set totalSimTime 20 s
+set simulationStep 0.01 s
+   
+set workspaceDir .
+set digitalTwinName LineFollowerTwin
+   
+generate -overwrite
