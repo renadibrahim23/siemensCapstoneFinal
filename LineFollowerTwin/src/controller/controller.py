@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import print_function
+import random
 import struct
 import sys
 import argparse
@@ -77,14 +78,19 @@ class Controller:
 				raise Exception("stopRequested")
 			nextExpectedTime = vsiCommonPythonApi.getSimulationTimeInNs()
 			while(vsiCommonPythonApi.getSimulationTimeInNs() < self.totalSimulationTime):
+				
+				# Start of user custom code region. Please apply edits only within these regions:  Inside the while loop
 				sim_time_sec=vsiCommonPythonApi.getSimulationTimeInNs()/1e9
 
 				if self.args.path=='sine':
 					self.target_y=0.5 * math.sin(2*math.pi*0.1*sim_time_sec)
 				else:
 					self.target_y=0.0
-				# Start of user custom code region. Please apply edits only within these regions:  Inside the while loop
-				current_error=self.target_y - self.mySignals.measured_y
+				
+				noise_amplitude = 0.0 
+				simulated_noise = random.uniform(-noise_amplitude, noise_amplitude)
+				noisy_y = self.mySignals.measured_y + simulated_noise
+				current_error=self.target_y - noisy_y
 
 				if abs(current_error)<=0.005:
 					current_error=0.0
@@ -97,9 +103,13 @@ class Controller:
 				derivative=(current_error - self.last_error)/self.dt
 				self.last_error=current_error
 
-				self.mySignals.angular_w=(self.kp * current_error) + (self.ki * self.integral_error) + (self.kd * derivative)
+				raw_w = (self.kp * current_error) + (self.ki * self.integral_error) + (self.kd * derivative)
+				self.mySignals.angular_w = max(min(raw_w, 3.0), -3.0)
+
+		
 				self.mySignals.linear_v=0.5
-				self.mySignals.theta_error = 0.0 - self.mySignals.measured_theta
+				raw_theta_error=0.0-self.mySignals.measured_theta
+				self.mySignals.theta_error=math.atan2(math.sin(raw_theta_error),math.cos(raw_theta_error))
 				# End of user custom code region. Please don't edit beyond this point.
 
 				self.updateInternalVariables()
