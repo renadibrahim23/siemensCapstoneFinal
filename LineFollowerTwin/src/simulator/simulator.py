@@ -54,8 +54,9 @@ class Simulator:
 		
 		self.mySignals.theta=0.0
 		self.dt=0.01
+		random_spawn=True
 
-		if args.random_spawn:
+		if random_spawn:
 			self.mySignals.pos_y=random.uniform(-0.5, 0.5)
 			print(f"--RANDOM SPAWN: starting at Y= {self.mySignals.pos_y:.3f}---")
 		else:
