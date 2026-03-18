@@ -115,7 +115,7 @@ class Controller:
 				noisy_y = self.mySignals.measured_y + simulated_noise
 				current_error = self.target_y - noisy_y
 
-				if abs(current_error) <= 0.005:
+				if abs(current_error) <= 0.015:
 					current_error = 0.0
 				self.mySignals.lateral_error = current_error
 
@@ -304,9 +304,9 @@ def main():
 	inputArgs.add_argument('--server-url', metavar='CO', default='localhost', help='server URL')
 
 	# Start of user custom code region. Please apply edits only within these regions:  Main method
-	inputArgs.add_argument('--kp', type=float, default=1.0, help='Proportional Gain')
-	inputArgs.add_argument('--ki',type=float,default=0.5, help='Integral Gain')
-	inputArgs.add_argument('--kd',type=float,default=2.8,help='Derivative Gain')
+	inputArgs.add_argument('--kp', type=float, default=0.5, help='Proportional Gain')
+	inputArgs.add_argument('--ki',type=float,default=0.0, help='Integral Gain')
+	inputArgs.add_argument('--kd',type=float,default=0.5,help='Derivative Gain')
 	inputArgs.add_argument('--path',type=str,default='circle',choices=['straight','sine', 'circle'])
 	# End of user custom code region. Please don't edit beyond this point.
 
