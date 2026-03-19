@@ -60,7 +60,11 @@ class Controller:
 
 		# Rate Limiter variables
 		self.prev_w = 0.0
-		self.max_delta_w = 0.4
+		self.max_delta_w = 0.8
+
+		# Filter for circular path noise reduction
+		self.filtered_error = 0.0
+		self.alpha = 0.2 
 		# End of user custom code region. Please don't edit beyond this point.
 
 
@@ -93,48 +97,72 @@ class Controller:
 					seg = 15.0
 					x = self.mySignals.measured_x
 					
-					# Arc calculation helper
-					def get_arc_y(u):
-						return radius - math.sqrt(max(0.0, radius**2 - u**2))
+					def get_arc_y(u, r):
+						# Returns the y-offset for a circle segment of radius r
+						return r - math.sqrt(max(0.0, r**2 - u**2))
+
+					# Calculate height of a full segment once to use as an offset
+					h = get_arc_y(seg, radius)
 
 					if x <= seg:
-						self.target_y = get_arc_y(x)
+						# First Arc (Curving Up)
+						self.target_y = get_arc_y(x, radius)
 					elif x <= 2.0 * seg:
-						self.target_y = get_arc_y(seg) - get_arc_y(x - seg)
+						# Second Arc (Curving Down - Starting from peak 'h')
+						self.target_y = h - get_arc_y(x - seg, radius)
 					elif x <= 3.0 * seg:
-						self.target_y = get_arc_y(x - 2.0 * seg)
+						# Third Arc (Curving Up - Starting from '0' again)
+						self.target_y = get_arc_y(x - 2.0 * seg, radius)
 					else:
-						self.target_y = get_arc_y(seg)
+						# Final Segment Lock
+						self.target_y = h
 				
 				else: # Default 'straight'
 					self.target_y = 0.0
 				
 				# Error Calculation
-				noise_amplitude = 0.01 
+				noise_amplitude = 0.01
 				simulated_noise = random.uniform(-noise_amplitude, noise_amplitude)
 				noisy_y = self.mySignals.measured_y + simulated_noise
 				current_error = self.target_y - noisy_y
 
-				if abs(current_error) <= 0.015:
-					current_error = 0.0
-				self.mySignals.lateral_error = current_error
+				# --- Apply Low-Pass Filter to all paths ---
+				self.filtered_error = (self.alpha * current_error) + ((1 - self.alpha) * self.filtered_error)
+				active_error = self.filtered_error
+
+				# --- Path-Specific Integral Logic ---
+				if self.args.path == 'circle':
+					# Integral Anti-Windup (Tighter cap for circles)
+					self.integral_error += active_error * self.dt
+					self.integral_error = max(min(self.integral_error, 1.0), -1.0)
+				else:
+					# Standard logic for other paths
+					if abs(active_error) <= 0.005:
+						temp_error = 0.0
+					else:
+						temp_error = active_error
+					self.integral_error += temp_error * self.dt
+					self.integral_error = max(min(self.integral_error, 5.0), -5.0)
+
+				self.mySignals.lateral_error = active_error
 
 				# PID Calculations
-				self.integral_error += current_error * self.dt
-				self.integral_error = max(min(self.integral_error, 5.0), -5.0)
-
-				derivative = (current_error - self.last_error) / self.dt
-				self.last_error = current_error
+				derivative = (active_error - self.last_error) / self.dt
+				self.last_error = active_error
 
 				# Rate Limiter Implementation
-				raw_w = (self.kp * current_error) + (self.ki * self.integral_error) + (self.kd * derivative)
+				raw_w = (self.kp * active_error) + (self.ki * self.integral_error) + (self.kd * derivative)
 				target_w = max(min(raw_w, 3.0), -3.0)
 
 				delta_w = target_w - self.prev_w
-				if delta_w > self.max_delta_w:
-					delta_w = self.max_delta_w
-				elif delta_w < -self.max_delta_w:
-					delta_w = -self.max_delta_w
+				
+				# Faster steering allowed for circles to keep up with curvature
+				current_max_delta = 1.2 if self.args.path == 'circle' else self.max_delta_w
+
+				if delta_w > current_max_delta:
+					delta_w = current_max_delta
+				elif delta_w < -current_max_delta:
+					delta_w = -current_max_delta
 
 				self.mySignals.angular_w = self.prev_w + delta_w
 				self.prev_w = self.mySignals.angular_w
@@ -187,7 +215,7 @@ class Controller:
 
 				# Start of user custom code region. Please apply edits only within these regions:  After sending the packet
 
-				# End of user custom code region. Please don't edit beyond this point.
+				# End of user don't edit beyond this point.
 
 				print("\n+=controller+=")
 				print("  VSI time:", end = " ")
@@ -304,10 +332,10 @@ def main():
 	inputArgs.add_argument('--server-url', metavar='CO', default='localhost', help='server URL')
 
 	# Start of user custom code region. Please apply edits only within these regions:  Main method
-	inputArgs.add_argument('--kp', type=float, default=0.5, help='Proportional Gain')
+	inputArgs.add_argument('--kp', type=float, default=4.0, help='Proportional Gain')
 	inputArgs.add_argument('--ki',type=float,default=0.0, help='Integral Gain')
-	inputArgs.add_argument('--kd',type=float,default=0.5,help='Derivative Gain')
-	inputArgs.add_argument('--path',type=str,default='circle',choices=['straight','sine', 'circle'])
+	inputArgs.add_argument('--kd',type=float,default=3.0,help='Derivative Gain')
+	inputArgs.add_argument('--path',type=str,default='straight',choices=['straight','sine', 'circle'])
 	# End of user custom code region. Please don't edit beyond this point.
 
 	args = inputArgs.parse_args()

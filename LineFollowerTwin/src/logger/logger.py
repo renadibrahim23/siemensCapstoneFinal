@@ -5,6 +5,7 @@ import sys
 import argparse
 import math
 import csv
+import matplotlib.pyplot as plt
 
 PythonGateways = 'pythonGateways/'
 sys.path.append(PythonGateways)
@@ -22,8 +23,6 @@ class MySignals:
 		self.angular_w = 0
 		self.lateral_error = 0
 		self.theta_error = 0
-
-
 
 
 # Start of user custom code region. Please apply edits only within these regions:  Global Variables & Definitions
@@ -46,22 +45,34 @@ class Logger:
 		self.mySignals = MySignals()
 
 		# Start of user custom code region. Please apply edits only within these regions:  Constructor
-		self.filename=f"results_{args.label}.csv"
-		self.csv_file=open(self.filename,mode='w',newline='')
-		self.writer=csv.writer(self.csv_file)
+		self.args = args
+		self.filename = f"results_{args.label}.csv"
+		self.csv_file = open(self.filename, mode='w', newline='')
+		self.writer = csv.writer(self.csv_file)
 
 		self.writer.writerow([
-			"time_s",
-			"pos_x",
-			"pos_y",
-			"theta",
-			"lateral_error",
-			"angular_w"
+			"time_s", "pos_x", "pos_y", "theta", "lateral_error", "angular_w", "target_y"
 		])
 
-		print(f"---LOGGER:Recording started. Saving to {self.filename} ---")
-		# End of user custom code region. Please don't edit beyond this point.
+		# Real-time Plotting Init
+		self.time_history = []
+		self.pos_y_history = []
+		self.target_y_history = [] 
+		self.plot_decimation = 20 
+		self.counter = 0
 
+		plt.ion() 
+		self.fig, self.ax = plt.subplots()
+		self.line_meas, = self.ax.plot([], [], 'b-', label='Measured Position Y')
+		self.line_target, = self.ax.plot([], [], 'r--', label='Desired Path (Target Y)') 
+		self.ax.set_xlabel('Time (s)')
+		self.ax.set_ylabel('Position Y (m)')
+		self.ax.set_title(f'Path Comparison: {args.label}')
+		self.ax.legend()
+		self.ax.grid(True)
+
+		print(f"---LOGGER:Recording started. Path Type: {args.path}. Saving to {self.filename} ---")
+		# End of user custom code region. Please don't edit beyond this point.
 
 
 	def mainThread(self):
@@ -81,16 +92,48 @@ class Logger:
 			while(vsiCommonPythonApi.getSimulationTimeInNs() < self.totalSimulationTime):
 
 				# Start of user custom code region. Please apply edits only within these regions:  Inside the while loop
-				sim_time_s=vsiCommonPythonApi.getSimulationTimeInNs()/1e9
+				sim_time_s = vsiCommonPythonApi.getSimulationTimeInNs() / 1e9
+				
+				# --- Replicate Target Calculation for Plotting ---
+				target_y = 0.0
+				if self.args.path == 'sine':
+					target_y = 0.5 * math.sin(2 * math.pi * 0.1 * sim_time_s)
+				elif self.args.path == 'circle':
+					radius = 20.0
+					seg = 15.0
+					x = self.mySignals.pos_x
+					def get_arc_y(u, r):
+						return r - math.sqrt(max(0.0, r**2 - u**2))
+					h = get_arc_y(seg, radius)
+					if x <= seg:
+						target_y = get_arc_y(x, radius)
+					elif x <= 2.0 * seg:
+						target_y = h - get_arc_y(x - seg, radius)
+					elif x <= 3.0 * seg:
+						target_y = get_arc_y(x - 2.0 * seg, radius)
+					else:
+						target_y = h
+				elif self.args.path == 'straight':
+					target_y = 0.0
 
 				self.writer.writerow([
-					sim_time_s,
-					self.mySignals.pos_x,
-					self.mySignals.pos_y,
-					self.mySignals.theta,
-					self.mySignals.lateral_error,
-					self.mySignals.angular_w
+					sim_time_s, self.mySignals.pos_x, self.mySignals.pos_y,
+					self.mySignals.theta, self.mySignals.lateral_error, 
+					self.mySignals.angular_w, target_y
 				])
+
+				# Update Histories
+				self.time_history.append(sim_time_s)
+				self.pos_y_history.append(self.mySignals.pos_y)
+				self.target_y_history.append(target_y)
+				self.counter += 1
+				
+				if self.counter % self.plot_decimation == 0:
+					self.line_meas.set_data(self.time_history, self.pos_y_history)
+					self.line_target.set_data(self.time_history, self.target_y_history)
+					self.ax.relim()
+					self.ax.autoscale_view()
+					plt.pause(0.001) 
 				# End of user custom code region. Please don't edit beyond this point.
 
 				self.updateInternalVariables()
@@ -122,33 +165,6 @@ class Logger:
 				receivedData = vsiCanPythonGateway.recvVariableFromCanPacket(signalNumBytes, 0, 64, 19)
 				self.mySignals.theta_error, receivedData = self.unpackBytes('d', receivedData, self.mySignals.theta_error)
 
-				# Start of user custom code region. Please apply edits only within these regions:  Before sending the packet
-
-				# End of user custom code region. Please don't edit beyond this point.
-
-				# Start of user custom code region. Please apply edits only within these regions:  After sending the packet
-
-				# End of user custom code region. Please don't edit beyond this point.
-
-				print("\n+=logger+=")
-				print("  VSI time:", end = " ")
-				print(vsiCommonPythonApi.getSimulationTimeInNs(), end = " ")
-				print("ns")
-				print("  Inputs:")
-				print("\tpos_x =", end = " ")
-				print(self.mySignals.pos_x)
-				print("\tpos_y =", end = " ")
-				print(self.mySignals.pos_y)
-				print("\ttheta =", end = " ")
-				print(self.mySignals.theta)
-				print("\tangular_w =", end = " ")
-				print(self.mySignals.angular_w)
-				print("\tlateral_error =", end = " ")
-				print(self.mySignals.lateral_error)
-				print("\ttheta_error =", end = " ")
-				print(self.mySignals.theta_error)
-				print("\n\n")
-
 				self.updateInternalVariables()
 
 				if(vsiCommonPythonApi.isStopRequested()):
@@ -166,25 +182,15 @@ class Logger:
 				vsiCommonPythonApi.advanceSimulation(nextExpectedTime - vsiCommonPythonApi.getSimulationTimeInNs())
 		except Exception as e:
 			if str(e) == "stopRequested":
-				print("Terminate signal has been received from one of the VSI clients")
-				# Advance time with a step that is equal to "simulationStep + 1" so that all other clients
-				# receive the terminate packet before terminating this client
+				print("Terminate signal received.")
 				vsiCommonPythonApi.advanceSimulation(self.simulationStep + 1)
 			else:
 				print(f"An error occurred: {str(e)}")
 		except:
-			# Advance time with a step that is equal to "simulationStep + 1" so that all other clients
-			# receive the terminate packet before terminating this client
 			vsiCommonPythonApi.advanceSimulation(self.simulationStep + 1)
 
-
-
-
-		# Start of user custom code region. Please apply edits only within these regions:  Protocol's callback function
-
-		# End of user custom code region. Please don't edit beyond this point.
-
-
+		plt.ioff()
+		plt.show()
 
 	def packBytes(self, signalType, signal):
 		if isinstance(signal, list):
@@ -204,8 +210,6 @@ class Logger:
 				return struct.pack(f'={len(signal)}s', signal)
 			else:
 				return struct.pack(f'={signalType}', signal)
-
-
 
 	def unpackBytes(self, signalType, packedBytes, signal = ""):
 		if isinstance(signal, list):
@@ -230,42 +234,35 @@ class Logger:
 			return unpackedVariable, packedBytes
 		else:
 			numBytes = 0
-			if signalType in ['?', 'b', 'B']:
-				numBytes = 1
-			elif signalType in ['h', 'H']:
-				numBytes = 2
-			elif signalType in ['f', 'i', 'I', 'L', 'l']:
-				numBytes = 4
-			elif signalType in ['q', 'Q', 'd']:
-				numBytes = 8
-			else:
-				raise Exception('received an invalid signal type in unpackBytes()')
+			if signalType in ['?', 'b', 'B']: numBytes = 1
+			elif signalType in ['h', 'H']: numBytes = 2
+			elif signalType in ['f', 'i', 'I', 'L', 'l']: numBytes = 4
+			elif signalType in ['q', 'Q', 'd']: numBytes = 8
+			else: raise Exception('invalid signal type')
 			unpackedVariable = struct.unpack(f'={signalType}', packedBytes[0:numBytes])[0]
 			packedBytes = packedBytes[numBytes:]
 			return unpackedVariable, packedBytes
 
 	def updateInternalVariables(self):
 		self.totalSimulationTime = vsiCommonPythonApi.getTotalSimulationTime()
-		self.stopRequested = vsiCommonPythonApi.isStopRequested()
+		self.stopRequested = vsiCommonPythonApi.isStopRequested() # Fixed: Added back 'Stop'
 		self.simulationStep = vsiCommonPythonApi.getSimulationStep()
-
 
 
 def main():
 	inputArgs = argparse.ArgumentParser(" ")
-	inputArgs.add_argument('--domain', metavar='D', default='AF_UNIX', help='Socket domain for connection with the VSI TLM fabric server')
-	inputArgs.add_argument('--server-url', metavar='CO', default='localhost', help='server URL of the VSI TLM Fabric Server')
+	inputArgs.add_argument('--domain', metavar='D', default='AF_UNIX')
+	inputArgs.add_argument('--server-url', metavar='CO', default='localhost')
 
 	# Start of user custom code region. Please apply edits only within these regions:  Main method
-	inputArgs.add_argument('--label',type=str,default='test_run',help='Name of csv file')
+	inputArgs.add_argument('--label', type=str, default='straight_baseline', help='CSV filename')
+	inputArgs.add_argument('--path', type=str, default='straight', choices=['straight', 'sine', 'circle'])
 	# End of user custom code region. Please don't edit beyond this point.
 
 	args = inputArgs.parse_args()
-                      
 	logger = Logger(args)
 	logger.mainThread()
 
 
-
 if __name__ == '__main__':
-    main()
+	main()
