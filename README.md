@@ -23,8 +23,8 @@ The objective of this project was to design, model, and simulate a line-followin
 The digital twin pipeline leverages a combination of mathematical modeling, simulation environments, and control scripts:
 
 *   **Kinematics & Dynamics:** State-space representation of a differential drive robot.
-*   **Simulation Engine:** MATLAB / Simulink *(or NX Mechatronics Concept Designer / TIA Portal depending on specific Siemens toolchain used)*.
-*   **Programming Languages:** Python / MATLAB for script-based control and data analysis.
+*   **Simulation Engine:** Siemens Virtual System Interconnect/ QuestaSim Simulator.
+*   **Programming Languages:** Python.
 *   **Version Control:** Git & GitHub for iterative development.
 
 ---
